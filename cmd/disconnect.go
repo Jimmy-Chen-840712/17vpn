@@ -4,12 +4,12 @@ import (
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 
-	"github.com/shawnpeng17/17vpn/internal/pritunl"
+	"17vpn/internal/pritunl"
 )
 
 var disconnectCmd = &cobra.Command{
-	Use:     "d",
-	Short:   "Disconnect all connections",
+	Use:   "d",
+	Short: "Disconnect all connections",
 	Run: func(cmd *cobra.Command, args []string) {
 		p := pritunl.New()
 		conns := p.Connections()

@@ -1,4 +1,4 @@
-module github.com/shawnpeng17/17vpn
+module 17vpn
 
 go 1.22
 

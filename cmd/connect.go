@@ -1,28 +1,25 @@
 package cmd
 
 import (
-	"fmt"
+	"github.com/fatih/color"
+	"github.com/spf13/cobra"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/AlecAivazis/survey/v2"
-	"github.com/fatih/color"
-	"github.com/spf13/cobra"
-
 	"17vpn/internal/pritunl"
 )
 
-var rootCmd = &cobra.Command{
-	Use:   "17vpn",
-	Short: "17vpn tool",
+var connectCmd = &cobra.Command{
+	Use:   "c",
+	Short: "connect to specific profile",
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := initConfig(); err != nil {
 			color.Red(err.Error())
 			return
 		}
-
 		p := pritunl.New()
+		var targetProfile pritunl.Profile
 		profiles := p.Profiles()
 		conns := p.Connections()
 
@@ -30,34 +27,10 @@ var rootCmd = &cobra.Command{
 			color.Yellow(err.Error())
 			return
 		}
-
-		fmt.Println()
-
-		var options []string
-		for _, profile := range profiles {
-			options = append(options, profile.Server)
-		}
-		var id string
-		prompt := &survey.Input{
-			Message: "Enter ID or Server",
-			Default: "",
-		}
-		if err := survey.AskOne(prompt, &id); err != nil {
-			color.Red(err.Error())
-			return
-		}
-
-		if id == "" {
-			return
-		}
-
-		// check profile exist
-		var targetProfile pritunl.Profile
-		isActionDisconnect := false
+		id := strings.ToUpper(args[0])
 		for i, profile := range profiles {
 			if strconv.Itoa(i+1) == id || strings.ToUpper(id) == profile.Server {
 				targetProfile = profile
-				isActionDisconnect = conns[profile.ID].Status == "connected"
 				break
 			}
 		}
@@ -65,26 +38,8 @@ var rootCmd = &cobra.Command{
 			color.Red("Profile not exists!")
 			return
 		}
-
-		if isActionDisconnect {
-			color.White("Disconnecting %s...", targetProfile.Server)
-			p.Disconnect(targetProfile.ID)
-			return
-		}
-
-		// disconnect all connection
-		for _, profile := range profiles {
-			if _, ok := conns[profile.ID]; ok {
-				color.White("Disconnecting %s...", profile.Server)
-				p.Disconnect(profile.ID)
-				time.Sleep(time.Second)
-			}
-		}
-
-		// connect target profile
 		color.Yellow("Connecting %s...", targetProfile.Server)
 		p.Connect(targetProfile.ID, password())
-
 		timeout := time.NewTimer(30 * time.Second)
 
 	Loop:
@@ -110,12 +65,5 @@ var rootCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.CompletionOptions.DisableDefaultCmd = true
-	rootCmd.SetHelpCommand(&cobra.Command{Hidden: true})
-}
-
-func Execute() {
-	if err := rootCmd.Execute(); err != nil {
-		return
-	}
+	rootCmd.AddCommand(connectCmd)
 }
